@@ -44,12 +44,17 @@ def run_tests(testing_data):
             false_negatives.append(outcome)
 
 
-# zipped = zip(nltk.corpus.ptb.parsed_sents(), nltk.corpus.ptb.sents())
-# ptb_sents = [{'parsed_sent': parsed_sent,
-#               'sent_list': sent_list,
-#               'sent_string': sent_without_symbols(sent_list),
-#               'contains_overt_comp': contains_overt_comp(parsed_sent),
-#               'contains_null_comp': contains_null_comp(parsed_sent)}
-#              for parsed_sent, sent_list in zipped]
+def generate_treebank_data():
+    zipped = zip(nltk.corpus.ptb.parsed_sents(), nltk.corpus.ptb.sents())
+    ptb_sents = [{'parsed_sent': parsed_sent,
+                  'sent_list': sent_list,
+                  'sent_string': sent_without_symbols(sent_list),
+                  'contains_overt_comp': contains_overt_comp(parsed_sent),
+                  'contains_null_comp': contains_null_comp(parsed_sent)}
+                 for parsed_sent, sent_list in zipped]
+    with open('ptb_data.p', 'wb') as f:
+        pickle.dump(ptb_sents, f)
+
+
 with open('ptb_data.p', 'rb') as f:
     run_tests(pickle.load(f))
