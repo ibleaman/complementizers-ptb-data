@@ -4,7 +4,7 @@ import re
 
 import pickle
 
-import algorithms
+# import algorithms
 
 
 detokenizer = nltk.treebank.TreebankWordDetokenizer()
@@ -52,9 +52,22 @@ def generate_treebank_data():
                   'contains_overt_comp': contains_overt_comp(parsed_sent),
                   'contains_null_comp': contains_null_comp(parsed_sent)}
                  for parsed_sent, sent_list in zipped]
-    with open('ptb_data.p', 'wb') as f:
-        pickle.dump(ptb_sents, f)
+    # with open('ptb_data.p', 'wb') as f:
+        # pickle.dump(ptb_sents, f)
+    zip_data_individually(ptb_sents)
 
 
-with open('ptb_data.p', 'rb') as f:
-    run_tests(pickle.load(f))
+def zip_data_individually(orig_data):
+    random.shuffle(orig_data)
+    section = 'train'
+    for i, t in enumerate(orig_data):
+        if i == len(orig_data) // 10:
+            section = 'test'
+        dirname = 'neg'
+        if t['contains_overt_comp'] or t['contains_null_comp']:
+            dirname = 'pos'
+        with open(f'{section}/{dirname}/sentence_{i:07}.txt', 'w') as f:
+            f.write(t.sentence + '\n')
+
+
+generate_treebank_data()
