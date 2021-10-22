@@ -20,12 +20,21 @@ def sent_without_symbols(words):
 
 
 def contains_overt_comp(parsed):
-    return bool(re.search(r'\(SBAR\s+\(IN that\)', str(parsed)))
-
+    for subtree in parsed.subtrees():
+        if subtree.label() == 'SBAR' and len(subtree) > 1:
+            for daughter in subtree:
+                if daughter.label() == 'IN' and daughter[0] == 'that':
+                    return True
+    return False
 
 def contains_null_comp(parsed):
-    return bool(re.search(r'\(SBAR\s+\(\-NONE\- 0\)(?!\s*\(S\s+\(\-NONE\-\s*\*T\*\-\d\)\))',
-                          str(parsed)))
+    for subtree in parsed.subtrees():
+        if subtree.label() == 'SBAR' and len(subtree) > 1:
+            for daughter_pair in nltk.bigrams(subtree):
+                if daughter_pair[0].label() == '-NONE-' and daughter_pair[0][0] == '0' and \
+                not (daughter_pair[1].label() == 'S' and '*T*' in daughter_pair[1].leaves()[0]):
+                    return True
+    return False
 
 
 def run_tests(testing_data):
