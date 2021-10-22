@@ -1,8 +1,9 @@
 import nltk
 from nltk.corpus import ptb
-import re
 
 import pickle
+
+import random
 
 # import algorithms
 
@@ -61,8 +62,8 @@ def generate_treebank_data():
                   'contains_overt_comp': contains_overt_comp(parsed_sent),
                   'contains_null_comp': contains_null_comp(parsed_sent)}
                  for parsed_sent, sent_list in zipped]
-    # with open('ptb_data.p', 'wb') as f:
-        # pickle.dump(ptb_sents, f)
+    with open('ptb_data.p', 'wb') as f:
+        pickle.dump(ptb_sents, f)
     zip_data_individually(ptb_sents)
 
 
@@ -75,8 +76,8 @@ def zip_data_individually(orig_data):
         dirname = 'neg'
         if t['contains_overt_comp'] or t['contains_null_comp']:
             dirname = 'pos'
-        with open(f'{section}/{dirname}/sentence_{i:07}.txt', 'w') as f:
-            f.write(t.sentence + '\n')
+        with open(f'classifier_data/{section}/{dirname}/sentence_{i:07}.txt', 'w') as f:
+            f.write(t['sent_string'] + '\n')
 
 
 generate_treebank_data()
