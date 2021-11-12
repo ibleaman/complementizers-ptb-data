@@ -67,17 +67,18 @@ def generate_treebank_data():
     zip_data_individually(ptb_sents)
 
 
-def zip_data_individually(orig_data):
+def zip_data_individually(dirname, pos_criterion, divisor):
+    with open('ptb_data.p', 'rb') as f:
+        orig_data = pickle.load(f)
     random.shuffle(orig_data)
     section = 'train'
     for i, t in enumerate(orig_data):
-        if i == len(orig_data) // 10:
+        if i == len(orig_data) // divisor:
             section = 'test'
-        dirname = 'neg'
-        if t['contains_overt_comp'] or t['contains_null_comp']:
-            dirname = 'pos'
-        with open(f'classifier_data/{section}/{dirname}/sentence_{i:07}.txt', 'w') as f:
+        label = 'pos' if pos_criterion(t) else 'neg'
+        with open(f'{dirname}/{section}/{label}/sentence_{i:07}.txt', 'w') as f:
             f.write(t['sent_string'] + '\n')
 
 
-generate_treebank_data()
+zip_data_individually('classifier_data_overt_10th', lambda t: t['contains_overt_comp'], 10)
+zip_data_individually('classifier_data_null_10th', lambda t: t['contains_null_comp'], 10)
