@@ -5,7 +5,7 @@ import pickle
 
 import random
 
-# import algorithms
+from pathlib import Path
 
 
 detokenizer = nltk.treebank.TreebankWordDetokenizer()
@@ -67,7 +67,13 @@ def generate_treebank_data():
     zip_data_individually(ptb_sents)
 
 
-def zip_data_individually(dirname, pos_criterion, divisor):
+def save_data_individually(dirname, pos_criterion, divisor):
+    sections = ['/train', '/test']
+    labels = ['/pos', '/neg']
+    for s in sections:
+        for l in labels:
+            Path(dirname + s + l).mkdir(parents=True, exist_ok=True)
+
     with open('ptb_data.p', 'rb') as f:
         orig_data = pickle.load(f)
     random.shuffle(orig_data)
@@ -80,5 +86,5 @@ def zip_data_individually(dirname, pos_criterion, divisor):
             f.write(t['sent_string'] + '\n')
 
 
-zip_data_individually('classifier_data_overt_10th', lambda t: t['contains_overt_comp'], 10)
-zip_data_individually('classifier_data_null_10th', lambda t: t['contains_null_comp'], 10)
+save_data_individually('classifier_data_overt_10th', lambda t: t['contains_overt_comp'], 10)
+save_data_individually('classifier_data_null_10th', lambda t: t['contains_null_comp'], 10)
