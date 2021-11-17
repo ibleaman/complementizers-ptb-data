@@ -68,6 +68,16 @@ def generate_treebank_data():
 
 
 def save_data_individually(dirname, pos_criterion, divisor):
+    with open('ptb_data.p', 'rb') as f:
+        orig_data = pickle.load(f)
+    trainpart = len(orig_data) // 2 // divisor
+    testpart = len(orig_data) // 2 - trainpart
+    save_data_individually(dirname, pos_criterion, trainpart, trainpart, testpart, testpart)
+
+def save_data_individually(dirname, pos_criterion, num_train_pos, num_train_neg,
+                           num_test_pos, num_test_neg):
+    postotal = num_train_pos + num_test_pos
+    negtotal = num_train_neg + num_test_neg
     sections = ['/train', '/test']
     labels = ['/pos', '/neg']
     for s in sections:
@@ -77,14 +87,32 @@ def save_data_individually(dirname, pos_criterion, divisor):
     with open('ptb_data.p', 'rb') as f:
         orig_data = pickle.load(f)
     random.shuffle(orig_data)
-    section = 'train'
+    poscount = 0
+    negcount = 0
     for i, t in enumerate(orig_data):
-        if i == len(orig_data) // divisor:
-            section = 'test'
-        label = 'pos' if pos_criterion(t) else 'neg'
+        if poscount > postotal and negcount > negtotal:
+            return
+        if pos_criterion(t):
+            label = 'pos'
+            poscount += 1
+            if poscount <= num_train_pos:
+                section = 'train'
+            elif poscount <= postotal:
+                section = 'test'
+            else:
+                continue
+        else:
+            label = 'neg'
+            negcount += 1
+            if negcount <= num_train_neg:
+                section = 'train'
+            elif negcount <= negtotal:
+                section = 'test'
+            else:
+                continue
         with open(f'{dirname}/{section}/{label}/sentence_{i:07}.txt', 'w') as f:
             f.write(t['sent_string'] + '\n')
 
 
-save_data_individually('classifier_data_overt_10th', lambda t: t['contains_overt_comp'], 10)
-save_data_individually('classifier_data_null_10th', lambda t: t['contains_null_comp'], 10)
+save_data_individually('classifier_data_overt_fair', lambda t: t['contains_overt_comp'], 500, 500, 5000, 5000)
+save_data_individually('classifier_data_null_fair', lambda t: t['contains_null_comp'], 500, 500, 5000, 5000)
