@@ -67,7 +67,7 @@ def generate_treebank_data():
         pickle.dump(ptb_sents, f)
 
 def save_data_individually(dirname, pos_criterion, num_train_pos, num_train_neg,
-                           num_test_pos, num_test_neg):
+                           num_test_pos, num_test_neg, seed=1):
     postotal = num_train_pos + num_test_pos
     negtotal = num_train_neg + num_test_neg
     sections = ['/train', '/test']
@@ -78,7 +78,7 @@ def save_data_individually(dirname, pos_criterion, num_train_pos, num_train_neg,
 
     with open('ptb_data.p', 'rb') as f:
         orig_data = pickle.load(f)
-    random.Random(4).shuffle(orig_data) # adding a seed number for reproducibility
+    random.Random(seed).shuffle(orig_data) # adding a seed number for reproducibility
     poscount = 0
     negcount = 0
     for i, t in enumerate(orig_data):
@@ -109,6 +109,5 @@ def save_data_individually(dirname, pos_criterion, num_train_pos, num_train_neg,
 
 
 generate_treebank_data()
-save_data_individually('comp_overt_150_2350', lambda t: t['contains_overt_comp'], 150, 150, 2350, 2350)
-save_data_individually('comp_null_150_2350', lambda t: t['contains_null_comp'], 150, 150, 2350, 2350)
-#save_data('complementizer_data')
+save_data_individually('comp_overt_150_2350', lambda t: t['contains_overt_comp'], 150, 150, 2350, 2350, 2)
+save_data_individually('comp_null_150_2350', lambda t: t['contains_null_comp'], 150, 150, 2350, 2350, 2)
