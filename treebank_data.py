@@ -110,7 +110,7 @@ def save_data_individually(dirname, pos_criterion, num_train_pos, num_train_neg,
 
 generate_treebank_data()
 for train_sample in [50, 100, 200, 500]:
-    test = 1000
+    test = 500
     for i in range(1, 11):
         save_data_individually('comp_overt_' + str(train_sample) + '_' + str(test) + '_seed_' + "{:02d}".format(i), lambda t: t['contains_overt_comp'], train_sample, train_sample, test, test, i)
         save_data_individually('comp_null_' + str(train_sample) + '_' + str(test) + '_seed_' + "{:02d}".format(i), lambda t: t['contains_null_comp'], train_sample, train_sample, test, test, i)
