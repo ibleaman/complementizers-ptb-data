@@ -1,12 +1,11 @@
 import nltk
 from nltk.corpus import ptb
 
+import re
+import unicodedata
 import pickle
-
 import random
-
 from pathlib import Path
-
 
 detokenizer = nltk.treebank.TreebankWordDetokenizer()
 
@@ -14,10 +13,29 @@ successes = []
 false_positives = []
 false_negatives = []
 
+def remove_control_characters(s):
+    return "".join(ch for ch in s if unicodedata.category(ch)[0]!="C")
 
+# sentence as a single string, without weird symbols, punctuation errors
 def sent_without_symbols(words):
     sent_lst = [w for w in words if w != '0' and '*' not in w]
-    return detokenizer.detokenize(sent_lst)
+    sent = detokenizer.detokenize(sent_lst)
+    sent = re.sub(r'(?<=\S)``', ' "', sent) # fix formatting of quotes
+    sent = re.sub(r' ?-- ?', '--', sent) # fix formatting of dashes
+    sent = re.sub(r' ([\.\,\;\:])', r'\1', sent) # fix formatting of punctuation
+    sent = re.sub(r'^\\" ', '"', sent) # fix formatting of quotation marks
+    sent = re.sub(r" ''", '"', sent)
+    sent = re.sub(r'--" ', '--"', sent)
+    sent = re.sub(r',"(?=\w)', '," ', sent)
+    sent = re.sub(r'("[\w\s]+")(?=\w)', '\1 ', sent)
+    sent = re.sub(r'(\w+")(?=\w)', '\1 ', sent)
+    sent = re.sub(r'-LRB-', '(', sent) # fix parentheses
+    sent = re.sub(r'-RRB-', ')', sent)
+    sent = re.sub(r'\( ', '(', sent)
+    sent = re.sub(r' \)', ')', sent)
+    sent = re.sub(r'  +', ' ', sent) # fix double spaces
+    sent = remove_control_characters(sent) # remove \x01 etc.
+    return sent
 
 
 def contains_overt_comp(parsed):
@@ -37,23 +55,6 @@ def contains_null_comp(parsed):
                     return True
     return False
 
-
-def run_tests(testing_data):
-    count = 0
-    for sent in testing_data:
-        count += 1
-        if count > 2000:
-            return
-        outcome = algorithms.contains_variable(sent['sent_string'], 0.075, 0.3)
-        print(outcome)
-        if outcome[0] == sent['contains_overt_comp'] or outcome[0] == sent['contains_null_comp']:
-            successes.append(outcome)
-        elif outcome[0]:
-            false_positives.append(outcome)
-        else:
-            false_negatives.append(outcome)
-
-
 def generate_treebank_data():
     zipped = zip(nltk.corpus.ptb.parsed_sents(), nltk.corpus.ptb.sents())
     ptb_sents = [{'parsed_sent': parsed_sent,
@@ -64,18 +65,9 @@ def generate_treebank_data():
                  for parsed_sent, sent_list in zipped]
     with open('ptb_data.p', 'wb') as f:
         pickle.dump(ptb_sents, f)
-    zip_data_individually(ptb_sents)
-
-
-def save_data_individually(dirname, pos_criterion, divisor):
-    with open('ptb_data.p', 'rb') as f:
-        orig_data = pickle.load(f)
-    trainpart = len(orig_data) // 2 // divisor
-    testpart = len(orig_data) // 2 - trainpart
-    save_data_individually(dirname, pos_criterion, trainpart, trainpart, testpart, testpart)
 
 def save_data_individually(dirname, pos_criterion, num_train_pos, num_train_neg,
-                           num_test_pos, num_test_neg):
+                           num_test_pos, num_test_neg, seed=1):
     postotal = num_train_pos + num_test_pos
     negtotal = num_train_neg + num_test_neg
     sections = ['/train', '/test']
@@ -86,7 +78,7 @@ def save_data_individually(dirname, pos_criterion, num_train_pos, num_train_neg,
 
     with open('ptb_data.p', 'rb') as f:
         orig_data = pickle.load(f)
-    random.shuffle(orig_data)
+    random.Random(seed).shuffle(orig_data) # adding a seed number for reproducibility
     poscount = 0
     negcount = 0
     for i, t in enumerate(orig_data):
@@ -114,5 +106,11 @@ def save_data_individually(dirname, pos_criterion, num_train_pos, num_train_neg,
             f.write(t['sent_string'] + '\n')
 
 
-save_data_individually('classifier_data_overt_fair', lambda t: t['contains_overt_comp'], 500, 500, 5000, 5000)
-save_data_individually('classifier_data_null_fair', lambda t: t['contains_null_comp'], 500, 500, 5000, 5000)
+
+
+generate_treebank_data()
+for train_sample in [50, 100, 200, 500]:
+    test = 500
+    for i in range(1, 11):
+        save_data_individually('comp_overt_' + str(train_sample) + '_' + str(test) + '_seed_' + "{:02d}".format(i), lambda t: t['contains_overt_comp'], train_sample, train_sample, test, test, i)
+        save_data_individually('comp_null_' + str(train_sample) + '_' + str(test) + '_seed_' + "{:02d}".format(i), lambda t: t['contains_null_comp'], train_sample, train_sample, test, test, i)
