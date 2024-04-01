@@ -65,6 +65,12 @@ def generate_treebank_data():
                  for parsed_sent, sent_list in zipped]
     with open('ptb_data.p', 'wb') as f:
         pickle.dump(ptb_sents, f)
+    print(f"The data set contains {len(ptb_sents)} sentences.")
+    print(f"    Of these, {len([sent for sent in ptb_sents if sent['contains_overt_comp'] and not sent['contains_null_comp']])} contain ONLY an overt complementizer.")
+    print(f"    Of these, {len([sent for sent in ptb_sents if sent['contains_null_comp'] and not sent['contains_overt_comp']])} contain ONLY a null complementizer.")
+    print(f"    {len([sent for sent in ptb_sents if sent['contains_null_comp'] and sent['contains_overt_comp']])} contain both an overt and a null complementizer.")
+    print(f"    {len([sent for sent in ptb_sents if not sent['contains_overt_comp'] and not sent['contains_null_comp']])} contain NO complementizer.")
+
 
 def save_data_individually(dirname, pos_criterion, num_train_pos, num_train_neg,
                            num_test_pos, num_test_neg, seed=1):
